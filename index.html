@@ -286,7 +286,7 @@
 
             <select class="player__track-select" id="track-select" onchange="pickTrack(this.value)">
                 <option value="">Select track</option>
-                <!-- populated from TRACKS in JS -->
+                <!-- populated dynamically from Supabase -->
             </select>
 
             <div class="player__progress" onclick="seek(event)">
@@ -329,32 +329,73 @@
         </div>
     </section>
 
+    <!-- Supabase JS client (CDN) -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+
     <script>
-        var Module = { canvas: document.getElementById("canvas") };
+        /* ── Supabase config ── */
+        const SUPABASE_URL = 'https://zhiwefnvvshvrorbklph.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpoaXdlZm52dnNodnJvcmJrbHBoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA1NzQxMTksImV4cCI6MjA4NjE1MDExOX0.gY4ermeBc6TWFU4yzrty8OQQL4vS_3FfMLRE1du8oL4';
+        const STORAGE_BUCKET = 'dualshock_tracks';
 
-        var audioContext, sourceNode, isPlaying = false, currentBuffer;
-        var startTime = 0, pausedAt = 0, currentTrackUrl = null;
+        const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        const TRACKS = [{ url: 'audio/talk dirty1.mp3', label: 'Talk Dirty' }];
+        function storageUrl(filePath) {
+            return SUPABASE_URL + '/storage/v1/object/public/' + STORAGE_BUCKET + '/' + encodeURIComponent(filePath);
+        }
 
-        (function initTrackSelect() {
+        /* ── Track data (loaded from Supabase) ── */
+        let TRACKS = [];
+
+        async function loadTracks() {
+            const { data, error } = await sb
+                .from('tracks')
+                .select('*')
+                .eq('is_active', true)
+                .order('display_order', { ascending: true });
+
+            if (error) {
+                console.error('Error loading tracks:', error);
+                return;
+            }
+
+            TRACKS = (data || []).map(t => ({
+                id: t.id,
+                url: storageUrl(t.file_path),
+                label: t.title,
+                filePath: t.file_path
+            }));
+
+            populateTrackSelect();
+        }
+
+        function populateTrackSelect() {
             const sel = document.getElementById('track-select');
+            // Clear existing options (keep the placeholder)
+            while (sel.options.length > 1) sel.remove(1);
+
             TRACKS.forEach(t => {
                 const opt = document.createElement('option');
                 opt.value = t.url;
                 opt.textContent = t.label;
                 sel.appendChild(opt);
             });
-        })();
+        }
+
+        /* ── Audio engine ── */
+        var Module = { canvas: document.getElementById("canvas") };
+
+        var audioContext, sourceNode, isPlaying = false, currentBuffer;
+        var startTime = 0, pausedAt = 0, currentTrackUrl = null;
 
         function updateCanvasVisibility() {
-            document.getElementById('canvas').classList.toggle('playing', isPlaying && currentBuffer);
+            document.getElementById('canvas').classList.toggle('playing', isPlaying && !!currentBuffer);
         }
         function updateDownloadBtn() {
             const btn = document.getElementById('download-btn');
             if (currentTrackUrl && currentBuffer) {
                 btn.href = currentTrackUrl;
-                btn.download = currentTrackUrl.split('/').pop() || 'track.mp3';
+                btn.download = decodeURIComponent(currentTrackUrl.split('/').pop()) || 'track.mp3';
                 btn.classList.remove('hidden');
             } else btn.classList.add('hidden');
         }
@@ -393,7 +434,8 @@
                     currentBuffer = buffer;
                     currentTrackUrl = url;
                     startBufferSource(0);
-                    const label = (TRACKS.find(t => t.url === url) || {}).label || url.split('/').pop().replace('.mp3','');
+                    const track = TRACKS.find(t => t.url === url);
+                    const label = track ? track.label : decodeURIComponent(url.split('/').pop()).replace('.mp3','');
                     document.getElementById('track-select').value = url;
                     document.getElementById('track-name').textContent = ' – ' + label;
                     document.getElementById('play-btn').classList.remove('player__button--paused');
@@ -485,6 +527,9 @@
             document.getElementById('player').classList.remove('player--active');
             document.querySelector('.bottom-bar').classList.remove('player-active');
         }
+
+        /* ── Init: load tracks from Supabase on page load ── */
+        loadTracks();
     </script>
     <script src="js/goom.js"></script>
 </body>

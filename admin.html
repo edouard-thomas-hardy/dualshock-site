@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>dualshock – admin</title>
+    <link rel="icon" type="image/png" href="assets/dsfavicon.png">
+    <style>
+        @font-face {
+            font-family: 'BrandFont';
+            src: url('assets/fonts/dualshock-font.ttf') format('truetype');
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html { background: #0a0a0a; color: #e0e0e0; font-size: 16px; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* ── Header ── */
+        .admin-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1.5rem 2rem;
+            border-bottom: 1px solid #1a1a1a;
+        }
+        .admin-header h1 {
+            font-family: 'BrandFont', sans-serif;
+            font-size: 1.6rem;
+            letter-spacing: 0.05em;
+        }
+        .admin-header h1 span { opacity: 0.4; font-family: inherit; }
+        .admin-header .user-info {
+            display: flex; align-items: center; gap: 1rem;
+            font-size: 0.85rem; opacity: 0.6;
+        }
+        .btn-logout {
+            background: none; border: 1px solid rgba(255,255,255,0.2);
+            color: #fff; padding: 0.4rem 1rem; font-size: 0.8rem;
+            cursor: pointer; transition: border-color 0.2s;
+        }
+        .btn-logout:hover { border-color: rgba(255,255,255,0.5); }
+
+        /* ── Login screen ── */
+        .login-screen {
+            flex: 1; display: flex; align-items: center; justify-content: center;
+        }
+        .login-box {
+            width: 100%; max-width: 360px; padding: 2rem;
+            text-align: center;
+        }
+        .login-box h2 {
+            font-family: 'BrandFont', sans-serif;
+            font-size: 2rem; margin-bottom: 0.5rem;
+        }
+        .login-box p { opacity: 0.5; margin-bottom: 2rem; font-size: 0.9rem; }
+        .login-box input {
+            width: 100%; padding: 0.75rem 1rem; margin-bottom: 0.75rem;
+            background: #111; border: 1px solid #222; color: #fff;
+            font-size: 0.95rem;
+        }
+        .login-box input:focus { border-color: #444; outline: none; }
+        .login-box .btn-primary {
+            width: 100%; padding: 0.75rem; margin-top: 0.5rem;
+            background: #fff; color: #000; border: none;
+            font-size: 0.95rem; font-weight: 600; cursor: pointer;
+            transition: opacity 0.2s;
+        }
+        .login-box .btn-primary:hover { opacity: 0.85; }
+        .login-box .login-error {
+            color: #ff4444; font-size: 0.85rem; margin-top: 1rem;
+            min-height: 1.2rem;
+        }
+
+        /* ── Admin dashboard ── */
+        .admin-dashboard { display: none; flex: 1; padding: 2rem; max-width: 900px; margin: 0 auto; width: 100%; }
+        .admin-dashboard.active { display: block; }
+
+        /* Upload section */
+        .upload-section {
+            background: #111; border: 1px solid #1a1a1a;
+            padding: 2rem; margin-bottom: 2rem;
+        }
+        .upload-section h3 {
+            font-size: 1rem; margin-bottom: 1.25rem;
+            letter-spacing: 0.05em; text-transform: uppercase; opacity: 0.7;
+        }
+        .upload-form {
+            display: grid; grid-template-columns: 1fr 1fr auto; gap: 0.75rem;
+            align-items: end;
+        }
+        .form-group label {
+            display: block; font-size: 0.75rem; opacity: 0.5;
+            margin-bottom: 0.4rem; text-transform: uppercase; letter-spacing: 0.05em;
+        }
+        .form-group input[type="text"] {
+            width: 100%; padding: 0.6rem 0.8rem;
+            background: #0a0a0a; border: 1px solid #222; color: #fff;
+            font-size: 0.9rem;
+        }
+        .form-group input[type="text"]:focus { border-color: #444; outline: none; }
+        .form-group input[type="file"] {
+            width: 100%; padding: 0.5rem 0;
+            color: #999; font-size: 0.85rem;
+        }
+        .form-group input[type="file"]::file-selector-button {
+            background: #222; border: 1px solid #333; color: #fff;
+            padding: 0.4rem 0.8rem; margin-right: 0.8rem;
+            cursor: pointer; font-size: 0.8rem;
+        }
+        .btn-upload {
+            background: #fff; color: #000; border: none;
+            padding: 0.6rem 1.5rem; font-size: 0.9rem; font-weight: 600;
+            cursor: pointer; transition: opacity 0.2s;
+            white-space: nowrap; height: fit-content;
+        }
+        .btn-upload:hover { opacity: 0.85; }
+        .btn-upload:disabled { opacity: 0.4; cursor: not-allowed; }
+
+        .upload-status {
+            margin-top: 1rem; font-size: 0.85rem; min-height: 1.2rem;
+        }
+        .upload-status.error { color: #ff4444; }
+        .upload-status.success { color: #44ff88; }
+
+        /* Progress bar */
+        .upload-progress {
+            width: 100%; height: 3px; background: #222;
+            margin-top: 0.75rem; display: none;
+        }
+        .upload-progress.active { display: block; }
+        .upload-progress-bar {
+            height: 100%; background: #fff;
+            width: 0%; transition: width 0.3s;
+        }
+
+        /* Tracks list */
+        .tracks-section h3 {
+            font-size: 1rem; margin-bottom: 1.25rem;
+            letter-spacing: 0.05em; text-transform: uppercase; opacity: 0.7;
+        }
+        .tracks-list { list-style: none; }
+        .track-item {
+            display: flex; align-items: center; gap: 1rem;
+            padding: 1rem 1.25rem;
+            background: #111; border: 1px solid #1a1a1a;
+            margin-bottom: -1px;
+            transition: background 0.15s;
+        }
+        .track-item:hover { background: #151515; }
+        .track-item .track-order {
+            width: 2rem; text-align: center;
+            font-size: 0.85rem; opacity: 0.4;
+            font-variant-numeric: tabular-nums;
+        }
+        .track-item .track-title {
+            flex: 1; font-size: 0.95rem;
+        }
+        .track-item .track-file {
+            font-size: 0.75rem; opacity: 0.35;
+            max-width: 200px; overflow: hidden;
+            text-overflow: ellipsis; white-space: nowrap;
+        }
+        .track-item .track-actions {
+            display: flex; gap: 0.5rem;
+        }
+        .track-btn {
+            background: none; border: 1px solid #333;
+            color: #999; padding: 0.3rem 0.7rem;
+            font-size: 0.75rem; cursor: pointer;
+            transition: all 0.15s;
+        }
+        .track-btn:hover { border-color: #555; color: #fff; }
+        .track-btn.active-toggle { color: #44ff88; border-color: #44ff88; }
+        .track-btn.active-toggle.inactive { color: #ff4444; border-color: #ff4444; }
+        .track-btn.delete:hover { border-color: #ff4444; color: #ff4444; }
+        .track-btn.move { font-size: 0.9rem; padding: 0.2rem 0.5rem; }
+
+        .empty-state {
+            text-align: center; padding: 3rem;
+            opacity: 0.3; font-size: 0.95rem;
+        }
+
+        .back-link {
+            display: inline-block; margin-top: 2rem;
+            font-size: 0.8rem; opacity: 0.4;
+            color: #fff; text-decoration: none;
+            transition: opacity 0.2s;
+        }
+        .back-link:hover { opacity: 0.7; }
+
+        @media (max-width: 640px) {
+            .upload-form {
+                grid-template-columns: 1fr;
+            }
+            .track-item .track-file { display: none; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Login Screen -->
+    <div class="login-screen" id="login-screen">
+        <div class="login-box">
+            <h2>dualshock</h2>
+            <p>Admin Access</p>
+            <form id="login-form">
+                <input type="password" id="login-password" placeholder="Password" autocomplete="off">
+                <button type="submit" class="btn-primary" id="login-btn">Enter</button>
+            </form>
+            <div class="login-error" id="login-error"></div>
+        </div>
+    </div>
+
+    <!-- Admin Dashboard (hidden until authenticated) -->
+    <div id="admin-app" style="display:none;">
+        <header class="admin-header">
+            <h1>dualshock <span>/ admin</span></h1>
+            <div class="user-info">
+                <button class="btn-logout" onclick="handleLogout()">Lock</button>
+            </div>
+        </header>
+
+        <div class="admin-dashboard active">
+            <!-- Upload -->
+            <div class="upload-section">
+                <h3>Upload Track</h3>
+                <div class="upload-form">
+                    <div class="form-group">
+                        <label for="track-title">Track Title</label>
+                        <input type="text" id="track-title" placeholder="e.g. Talk Dirty">
+                    </div>
+                    <div class="form-group">
+                        <label for="track-file">Audio File</label>
+                        <input type="file" id="track-file" accept="audio/*,.mp3,.wav,.m4a,.aac,.ogg,.flac,.wma">
+                    </div>
+                    <button class="btn-upload" id="upload-btn" onclick="handleUpload()">Upload</button>
+                </div>
+                <div class="upload-progress" id="upload-progress">
+                    <div class="upload-progress-bar" id="upload-progress-bar"></div>
+                </div>
+                <div class="upload-status" id="upload-status"></div>
+            </div>
+
+            <!-- Track List -->
+            <div class="tracks-section">
+                <h3>Tracks</h3>
+                <ul class="tracks-list" id="tracks-list">
+                    <li class="empty-state">Loading tracks…</li>
+                </ul>
+            </div>
+
+            <a href="index.html" class="back-link">&larr; Back to site</a>
+        </div>
+    </div>
+
+    <!-- Supabase JS client (CDN) -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+
+    <script>
+        /* ── Supabase config ── */
+        const SUPABASE_URL = 'https://zhiwefnvvshvrorbklph.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpoaXdlZm52dnNodnJvcmJrbHBoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA1NzQxMTksImV4cCI6MjA4NjE1MDExOX0.gY4ermeBc6TWFU4yzrty8OQQL4vS_3FfMLRE1du8oL4';
+        const STORAGE_BUCKET = 'dualshock_tracks';
+        const ADMIN_PASSWORD = 'dualshock2026';
+
+        const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        function storageUrl(filePath) {
+            return SUPABASE_URL + '/storage/v1/object/public/' + STORAGE_BUCKET + '/' + encodeURIComponent(filePath);
+        }
+
+        /* ── Simple password gate ── */
+        const SESSION_KEY = 'dualshock_admin';
+
+        function checkSession() {
+            if (sessionStorage.getItem(SESSION_KEY) === 'true') {
+                showDashboard();
+            }
+        }
+
+        document.getElementById('login-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const password = document.getElementById('login-password').value;
+            const errorEl = document.getElementById('login-error');
+
+            if (password === ADMIN_PASSWORD) {
+                sessionStorage.setItem(SESSION_KEY, 'true');
+                errorEl.textContent = '';
+                showDashboard();
+            } else {
+                errorEl.textContent = 'Incorrect password';
+                document.getElementById('login-password').value = '';
+            }
+        });
+
+        function handleLogout() {
+            sessionStorage.removeItem(SESSION_KEY);
+            document.getElementById('admin-app').style.display = 'none';
+            document.getElementById('login-screen').style.display = 'flex';
+            document.getElementById('login-password').value = '';
+        }
+
+        function showDashboard() {
+            document.getElementById('login-screen').style.display = 'none';
+            document.getElementById('admin-app').style.display = 'flex';
+            document.getElementById('admin-app').style.flexDirection = 'column';
+            loadAdminTracks();
+        }
+
+        /* ── Tracks CRUD ── */
+        let adminTracks = [];
+
+        async function loadAdminTracks() {
+            const { data, error } = await sb
+                .from('tracks')
+                .select('*')
+                .order('display_order', { ascending: true });
+
+            if (error) {
+                console.error('Error loading tracks:', error);
+                return;
+            }
+
+            adminTracks = data || [];
+            renderTracks();
+        }
+
+        function renderTracks() {
+            const list = document.getElementById('tracks-list');
+
+            if (adminTracks.length === 0) {
+                list.innerHTML = '<li class="empty-state">No tracks yet. Upload your first track above.</li>';
+                return;
+            }
+
+            list.innerHTML = adminTracks.map(function(t, i) {
+                return '<li class="track-item" data-id="' + t.id + '">' +
+                    '<span class="track-order">' + t.display_order + '</span>' +
+                    '<span class="track-title">' + escHtml(t.title) + '</span>' +
+                    '<span class="track-file">' + escHtml(t.file_path) + '</span>' +
+                    '<div class="track-actions">' +
+                        '<button class="track-btn move" onclick="moveTrack(\'' + t.id + '\', -1)" title="Move up">&#9650;</button>' +
+                        '<button class="track-btn move" onclick="moveTrack(\'' + t.id + '\', 1)" title="Move down">&#9660;</button>' +
+                        '<button class="track-btn active-toggle ' + (t.is_active ? '' : 'inactive') + '" ' +
+                            'onclick="toggleActive(\'' + t.id + '\', ' + (!t.is_active) + ')">' +
+                            (t.is_active ? 'Active' : 'Inactive') +
+                        '</button>' +
+                        '<button class="track-btn delete" onclick="deleteTrack(\'' + t.id + '\', \'' + escAttr(t.file_path) + '\')">Delete</button>' +
+                    '</div>' +
+                '</li>';
+            }).join('');
+        }
+
+        function escHtml(str) {
+            var d = document.createElement('div');
+            d.textContent = str;
+            return d.innerHTML;
+        }
+        function escAttr(str) {
+            return str.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+        }
+
+        /* ── Upload ── */
+        async function handleUpload() {
+            var titleInput = document.getElementById('track-title');
+            var fileInput = document.getElementById('track-file');
+            var btn = document.getElementById('upload-btn');
+            var statusEl = document.getElementById('upload-status');
+            var progressEl = document.getElementById('upload-progress');
+            var progressBar = document.getElementById('upload-progress-bar');
+
+            var title = titleInput.value.trim();
+            var file = fileInput.files[0];
+
+            if (!title) { showStatus('Please enter a track title.', true); return; }
+            if (!file) { showStatus('Please select an audio file.', true); return; }
+
+            btn.disabled = true;
+            btn.textContent = 'Uploading…';
+            statusEl.textContent = '';
+            statusEl.className = 'upload-status';
+            progressEl.classList.add('active');
+            progressBar.style.width = '0%';
+
+            try {
+                // 1. Upload file to storage
+                var fileName = file.name;
+                progressBar.style.width = '30%';
+
+                var uploadResult = await sb.storage
+                    .from(STORAGE_BUCKET)
+                    .upload(fileName, file, {
+                        cacheControl: '3600',
+                        upsert: false
+                    });
+
+                if (uploadResult.error) {
+                    var msg = uploadResult.error.message || '';
+                    if (msg.includes('already exists') || msg.includes('Duplicate') || msg.includes('duplicate')) {
+                        showStatus('A file with that name already exists. Rename your file or delete the existing track first.', true);
+                    } else {
+                        showStatus('Upload failed: ' + msg, true);
+                    }
+                    resetUploadUI();
+                    return;
+                }
+
+                progressBar.style.width = '70%';
+
+                // 2. Get next display_order
+                var maxOrder = adminTracks.length > 0
+                    ? Math.max.apply(null, adminTracks.map(function(t) { return t.display_order || 0; }))
+                    : 0;
+
+                // 3. Insert track record
+                var insertResult = await sb
+                    .from('tracks')
+                    .insert({
+                        title: title,
+                        file_path: fileName,
+                        display_order: maxOrder + 1,
+                        is_active: true
+                    });
+
+                if (insertResult.error) {
+                    showStatus('File uploaded but failed to save track record: ' + insertResult.error.message, true);
+                    resetUploadUI();
+                    return;
+                }
+
+                progressBar.style.width = '100%';
+
+                // 4. Success
+                showStatus('Track "' + title + '" uploaded successfully!', false);
+                titleInput.value = '';
+                fileInput.value = '';
+                await loadAdminTracks();
+
+                setTimeout(function() {
+                    progressEl.classList.remove('active');
+                    progressBar.style.width = '0%';
+                }, 1500);
+
+            } catch (err) {
+                showStatus('Unexpected error: ' + err.message, true);
+            }
+
+            resetUploadUI();
+        }
+
+        function showStatus(msg, isError) {
+            var el = document.getElementById('upload-status');
+            el.textContent = msg;
+            el.className = 'upload-status ' + (isError ? 'error' : 'success');
+        }
+
+        function resetUploadUI() {
+            var btn = document.getElementById('upload-btn');
+            btn.disabled = false;
+            btn.textContent = 'Upload';
+        }
+
+        /* ── Toggle active/inactive ── */
+        async function toggleActive(id, newState) {
+            var result = await sb
+                .from('tracks')
+                .update({ is_active: newState })
+                .eq('id', id);
+
+            if (result.error) {
+                alert('Failed to update: ' + result.error.message);
+                return;
+            }
+            await loadAdminTracks();
+        }
+
+        /* ── Reorder ── */
+        async function moveTrack(id, direction) {
+            var idx = adminTracks.findIndex(function(t) { return t.id === id; });
+            var swapIdx = idx + direction;
+            if (swapIdx < 0 || swapIdx >= adminTracks.length) return;
+
+            var a = adminTracks[idx];
+            var b = adminTracks[swapIdx];
+
+            var aOrder = a.display_order;
+            var bOrder = b.display_order;
+
+            await Promise.all([
+                sb.from('tracks').update({ display_order: bOrder }).eq('id', a.id),
+                sb.from('tracks').update({ display_order: aOrder }).eq('id', b.id)
+            ]);
+
+            await loadAdminTracks();
+        }
+
+        /* ── Delete ── */
+        async function deleteTrack(id, filePath) {
+            if (!confirm('Delete this track? This cannot be undone.')) return;
+
+            // 1. Delete from storage
+            var storageResult = await sb.storage
+                .from(STORAGE_BUCKET)
+                .remove([filePath]);
+
+            if (storageResult.error) {
+                console.warn('Storage delete warning:', storageResult.error.message);
+            }
+
+            // 2. Delete from database
+            var dbResult = await sb
+                .from('tracks')
+                .delete()
+                .eq('id', id);
+
+            if (dbResult.error) {
+                alert('Failed to delete track record: ' + dbResult.error.message);
+                return;
+            }
+
+            await loadAdminTracks();
+        }
+
+        /* ── Init ── */
+        checkSession();
+    </script>
+</body>
+</html>
