@@ -2,450 +2,490 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="DUALSHOCK - Official DJ Portfolio & Music Repository">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>dualshock</title>
-    
     <link rel="icon" type="image/png" href="assets/dsfavicon.png">
 
     <style>
         @font-face {
             font-family: 'BrandFont';
             src: url('assets/fonts/dualshock-font.ttf') format('truetype');
+        }
+        @font-face {
+            font-family: 'Neue Haas Grotesk';
+            src: url('example-site/fonts/neue-haas-grotesk-regular.woff2') format('woff2'),
+                 url('example-site/fonts/neue-haas-grotesk-regular.woff') format('woff');
             font-weight: normal;
             font-style: normal;
+            font-display: swap;
         }
 
-        :root {
-            --bg: #000000;
-            --fg: #ffffff;
-            --blue: #0000ff;
-            --grey: #333333;
-            --font-main: 'Inter', -apple-system, system-ui, sans-serif;
-            --font-mono: 'SF Mono', 'Roboto Mono', monospace;
-        }
-
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-
-        body {
-            background-color: var(--bg);
-            color: var(--fg);
-            font-family: var(--font-main);
-            -webkit-font-smoothing: antialiased;
-            min-height: 100vh;
-            overflow: hidden; /* Default for desktop landing */
-        }
-
-        #starfield {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: -1;
+        * { margin: 0; padding: 0; box-sizing: border-box; outline: none; }
+        html {
             background: #000;
-            transition: opacity 1.0s ease-in-out;
-            opacity: 1;
+            color: #fff;
+            font-size: 16px;
+            height: 100%;
+            overflow: hidden;
+            -moz-osx-font-smoothing: grayscale;
+            -webkit-font-smoothing: antialiased;
+        }
+        body {
+            font: 1rem 'Neue Haas Grotesk', -apple-system, sans-serif;
+            height: 100vh;
+            overflow: hidden;
         }
 
-        .top-nav {
-            width: 100%;
-            padding: 20px;
-            position: fixed;
-            top: 0;
-            background: rgba(0, 0, 0, 0.3); 
-            backdrop-filter: blur(5px);
-            z-index: 1000;
-        }
+        a { color: inherit; text-decoration: none; }
+        button { background: none; border: none; color: inherit; font: inherit; cursor: pointer; }
 
-        .nav-container {
-            max-width: 1600px;
-            margin: 0 auto;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
+        /* Canvas - Goom visualiser, only when playing */
+        #canvas {
+            display: block;
+            height: 100vh; left: 0; top: 0; width: 100%;
+            pointer-events: none; position: fixed;
+            z-index: 2; background: #000;
+            opacity: 0; transition: opacity 0.4s;
         }
+        #canvas.playing { opacity: 1; }
 
-        .brand a {
+        /* Logo - always visible, centered top, on top of overlays */
+        .logo {
+            color: #fff;
             font-family: 'BrandFont', sans-serif;
-            color: var(--fg);
-            text-decoration: none;
-            font-size: 1.5rem;
-            letter-spacing: 0.05em;
-            cursor: pointer;
-            transition: color 0.1s ease;
+            position: fixed;
+            left: 50%; top: 2rem;
+            transform: translateX(-50%);
+            z-index: 2000;
         }
-
-        .brand a:hover { color: var(--blue); }
-
-        .nav-links { display: flex; gap: 25px; }
-
-        .nav-item {
-            color: var(--fg);
-            text-decoration: none;
-            font-size: 0.85rem;
-            padding: 2px 8px;
-            cursor: pointer;
-            transition: background 0.1s ease;
+        .logo a {
+            display: block;
+            font-size: clamp(2rem, 5vw, 3.5rem);
+            transition: opacity 0.2s;
         }
+        .logo a:hover { opacity: 0.8; }
 
-        .nav-item:hover { background-color: var(--blue); }
-
-        .content-section {
-            display: none;
-            max-width: 1200px;
-            margin: 120px auto 100px auto; 
-            padding: 0 40px;
-            position: relative;
-            z-index: 10;
-        }
-
-        .contact-info {
-            font-family: var(--font-mono);
-            font-size: 0.85rem;
-            line-height: 2.5;
-        }
-
-        .contact-info a { color: var(--fg); text-decoration: none; }
-        .contact-info a:hover { background-color: var(--blue); }
-
-        .file-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 12px 0;
-            font-family: var(--font-mono);
-            font-size: 0.85rem;
-        }
-
-        .file-main { display: flex; align-items: center; gap: 15px; }
-
-        .file-link:hover { color: var(--blue); cursor: pointer; }
-
-        .file-tags {
-            font-size: 0.7rem;
-            color: #666;
-            text-transform: lowercase;
-            display: flex;
-            gap: 12px;
-        }
-
-        .tag-item { border: 1px solid #222; padding: 1px 6px; }
-
-        .file-meta-right {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-
-        .file-size {
-            font-size: 0.75rem;
-            color: var(--fg);
-            opacity: 0.8;
-        }
-
-        .dl-btn {
-            color: var(--fg) !important;
-            text-decoration: none;
-            font-size: 1.1rem;
-            padding: 0 5px;
-        }
-
-        .dl-btn:hover { color: var(--blue) !important; }
-
-        .player-bar {
+        /* Bottom bar - like Peggy: nav OR player, never both */
+        .bottom-bar {
             position: fixed;
             bottom: 0;
             left: 0;
-            width: 100%;
-            background: rgba(0, 0, 0, 0.8);
-            backdrop-filter: blur(10px);
-            border-top: 1px solid var(--grey);
-            padding: 20px;
-            display: none; 
-            z-index: 1000;
+            right: 0;
+            z-index: 100;
         }
 
-        .player-container {
-            max-width: 1600px;
-            margin: 0 auto;
+        /* Player - hidden by default, replaces nav when playing */
+        .player {
             display: flex;
             align-items: center;
-            gap: 40px;
+            gap: 1.5rem;
+            padding: 1.25rem 2rem;
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.4s;
+        }
+        .player--active {
+            opacity: 1;
+            pointer-events: auto;
         }
 
-        .player-controls { display: flex; gap: 20px; font-size: 1.2rem; cursor: pointer; }
-        .progress-container { flex-grow: 1; height: 20px; display: flex; align-items: center; cursor: pointer; position: relative; }
-        .progress-bg { width: 100%; height: 1px; background: var(--grey); position: absolute; }
-        .progress-fill { position: absolute; height: 1px; background: var(--fg); width: 0%; z-index: 1; }
+        /* Nav - visible by default, hides when player active */
+        .bottom-bar.player-active .navigation {
+            opacity: 0;
+            pointer-events: none;
+        }
+        .bottom-bar.player-active .player {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        .player__button {
+            flex-shrink: 0;
+            width: 1.2rem;
+            height: 1.2rem;
+            padding: 0;
+            transition: opacity 0.4s;
+        }
+        .player__button:hover { opacity: 0.5; }
+        .player__button__icons {
+            height: 1.2rem;
+            position: relative;
+            width: 1.2rem;
+        }
+        .player__button__play,
+        .player__button__pause {
+            font-size: 0;
+            height: 1.2rem;
+            left: 50%;
+            position: absolute;
+            top: 50%;
+            width: 1.2rem;
+        }
+        .player__button__play {
+            background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 22 28'%3E%3Cpath fill='%23fff' d='M0,0v28l22-14L0,0z'/%3E%3C/svg%3E") no-repeat center/contain;
+            opacity: 0;
+            transform: translate(-50%, -50%) scale(0.25);
+            transition: opacity 0.4s, transform 0.4s;
+        }
+        .player__button--paused .player__button__play {
+            opacity: 1;
+            transform: translate(-50%, -50%) scale(1);
+        }
+        .player__button__pause {
+            background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 22 28'%3E%3Crect fill='%23fff' x='0.5' width='7' height='28'/%3E%3Crect fill='%23fff' x='14.5' width='7' height='28'/%3E%3C/svg%3E") no-repeat center/contain;
+            transform: translate(-50%, -50%) scale(1);
+            transition: opacity 0.4s, transform 0.4s;
+        }
+        .player__button--paused .player__button__pause {
+            opacity: 0;
+            transform: translate(-50%, -50%) scale(0.25);
+        }
+        .player__button--playing .player__button__play {
+            opacity: 0;
+            transform: translate(-50%, -50%) scale(0.25);
+        }
+        .player__button--playing .player__button__pause {
+            opacity: 1;
+            transform: translate(-50%, -50%) scale(1);
+        }
 
-        .track-display {
-            display: flex;
-            align-items: center;
-            gap: 20px;
-            font-family: var(--font-mono);
+        .player__track-select {
+            flex-shrink: 0;
+            background: transparent;
+            border: 1px solid rgba(255,255,255,0.4);
+            color: #fff;
+            font: inherit;
             font-size: 0.8rem;
-            min-width: 300px;
-            justify-content: flex-end;
+            padding: 0.4rem 0.8rem;
+            cursor: pointer;
+            min-width: 120px;
+        }
+        .player__track-select:hover { border-color: rgba(255,255,255,0.7); }
+        .player__track-select option { background: #000; color: #fff; }
+
+        .player__progress {
+            flex: 1;
+            min-width: 0;
+            display: flex;
+            align-items: center;
+            height: 1.5rem;
+            cursor: pointer;
+        }
+        .player__progress__line {
+            width: 100%;
+            height: 2px;
+            background: hsla(0,0%,100%,0.4);
+            position: relative;
+        }
+        .player__progress__length {
+            background: #fff;
+            height: 100%;
+            left: 0;
+            position: absolute;
+            top: 0;
+            transform: scaleX(0);
+            transform-origin: left;
+            width: 100%;
         }
 
-        /* MOBILE RESPONSIVE TWEAKS */
-        @media (max-width: 768px) {
-            body { overflow-y: auto; }
-            .content-section { padding: 0 20px; margin-top: 100px; margin-bottom: 120px; }
-            .file-row { flex-direction: column; align-items: flex-start; gap: 8px; padding: 16px 0; border-bottom: 1px solid #111; }
-            .file-main { flex-direction: column; align-items: flex-start; gap: 6px; }
-            .file-meta-right { width: 100%; justify-content: flex-end; gap: 20px; }
-            .track-display #track-name { display: none; }
-            .track-display { min-width: auto; }
-            .player-container { gap: 20px; }
+        .player__title {
+            flex-shrink: 0;
+            font-size: 0.8rem;
+            white-space: nowrap;
         }
+
+        .player__download {
+            flex-shrink: 0;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            opacity: 0.9;
+        }
+        .player__download:hover { opacity: 0.6; }
+        .player__download.hidden { display: none; }
+
+        .player__fullscreen {
+            flex-shrink: 0;
+            width: 1.2rem;
+            height: 1.2rem;
+            padding: 0;
+            background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 14'%3E%3Cpath d='M2 9H0v5h5v-2H2V9zM0 5h2V2h3V0H0v5zm12 7H9v2h5V9h-2v3zM9 0v2h3v3h2V0H9z' fill='%23fff' fill-rule='evenodd'/%3E%3C/svg%3E") no-repeat center/contain;
+        }
+        .player__fullscreen:hover { opacity: 0.5; }
+
+        .player__back {
+            flex-shrink: 0;
+            font-size: 1rem;
+            opacity: 0.7;
+            padding: 0.25rem;
+        }
+        .player__back:hover { opacity: 1; }
+
+        /* Navigation - visible by default, hides when player active */
+        .navigation {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1.25rem 2rem;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            transition: opacity 0.4s;
+        }
+        .navigation__list {
+            display: flex;
+            gap: 2.5rem;
+            list-style: none;
+        }
+        .navigation__link {
+            cursor: pointer;
+            transition: opacity 0.4s;
+        }
+        .navigation__link:hover { opacity: 0.5; }
+
+        /* Content overlays */
+        .content-section {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.92);
+            z-index: 1500;
+            align-items: center;
+            justify-content: center;
+            padding: 5rem 2rem;
+        }
+        .content-section.active { display: flex; flex-direction: column; }
+        .content-inner {
+            max-width: 480px;
+            text-align: center;
+            font-size: 1rem;
+            line-height: 1.7;
+        }
+        .content-inner h2 { font-size: 1.1rem; margin-bottom: 1rem; letter-spacing: 0.1em; }
+        .content-section .close-hint { margin-top: 1.5rem; font-size: 0.8rem; opacity: 0.6; }
     </style>
 </head>
 <body>
+    <canvas id="canvas"></canvas>
 
-    <canvas id="starfield"></canvas>
+    <h1 class="logo">
+        <a href="#" onclick="resetToLanding(); return false;">dualshock</a>
+    </h1>
 
-    <nav class="top-nav">
-        <div class="nav-container">
-            <div class="brand"><a onclick="resetToLanding()">dualshock</a></div>
-            <div class="nav-links">
-                <span class="nav-item" onclick="showSection('contact')">contact</span>
-                <span class="nav-item" onclick="showSection('music')">music</span>
+    <div class="bottom-bar">
+        <div class="player" id="player">
+            <button class="player__button player__button--paused" id="play-btn" onclick="togglePlayback()">
+                <div class="player__button__icons">
+                    <div class="player__button__play">Play</div>
+                    <div class="player__button__pause">Pause</div>
+                </div>
+            </button>
+
+            <select class="player__track-select" id="track-select" onchange="pickTrack(this.value)">
+                <option value="">Select track</option>
+                <!-- populated from TRACKS in JS -->
+            </select>
+
+            <div class="player__progress" onclick="seek(event)">
+                <div class="player__progress__line">
+                    <div class="player__progress__length" id="progress-fill"></div>
+                </div>
             </div>
+
+            <p class="player__title">dualshock <span id="track-name"></span></p>
+
+            <a id="download-btn" class="player__download hidden" href="#" download>Download</a>
+
+            <button class="player__fullscreen" onclick="toggleFullscreen()"></button>
+            <button class="player__back" onclick="togglePlayer()" title="Back to menu">✕</button>
         </div>
-    </nav>
 
-    <main class="container">
-        <section id="contact" class="content-section">
-            <div class="contact-info">
-                <p><a href="mailto:contact@dualshockmusic.com">contact@dualshockmusic.com</a></p>
-                <p><a href="https://soundcloud.com/dualshockmusik" target="_blank">soundcloud</a></p>
-                <p><a href="https://instagram.com/dualshockmusic" target="_blank">instagram</a></p>
-            </div>
-        </section>
+        <nav class="navigation">
+            <ul class="navigation__list">
+                <li><a class="navigation__link" onclick="togglePlayer()">Music</a></li>
+                <li><a class="navigation__link" onclick="showSection('bookings')">Bookings</a></li>
+                <li><a class="navigation__link" onclick="showSection('contact')">Contact</a></li>
+            </ul>
+        </nav>
+    </div>
 
-        <section id="music" class="content-section">
-            <div class="file-row">
-                <div class="file-main">
-                    <span class="file-link" onclick="handlePlay('talk dirty.mp3')">talk dirty.mp3</span>
-                    <div class="file-tags">
-                        <span class="tag-item">house</span>
-                        <span class="tag-item">126 bpm</span>
-                    </div>
-                </div>
-                <div class="file-meta-right">
-                    <span class="file-size">8.4 mb</span>
-                    <a href="audio/talk dirty.mp3" download class="dl-btn">↓</a>
-                </div>
-            </div>
 
-            <div class="file-row">
-                <div class="file-main">
-                    <span class="file-link" onclick="handlePlay('promise.mp3')">promise.mp3</span>
-                    <div class="file-tags">
-                        <span class="tag-item">garage</span>
-                        <span class="tag-item">132 bpm</span>
-                    </div>
-                </div>
-                <div class="file-meta-right">
-                    <span class="file-size">7.1 mb</span>
-                    <a href="audio/promise.mp3" download class="dl-btn">↓</a>
-                </div>
-            </div>
-
-            <div class="file-row">
-                <div class="file-main">
-                    <span class="file-link" onclick="handlePlay('magnolia.mp3')">magnolia.mp3</span>
-                    <div class="file-tags">
-                        <span class="tag-item">house</span>
-                        <span class="tag-item">124 bpm</span>
-                    </div>
-                </div>
-                <div class="file-meta-right">
-                    <span class="file-size">9.2 mb</span>
-                    <a href="audio/magnolia.mp3" download class="dl-btn">↓</a>
-                </div>
-            </div>
-
-            <div class="file-row">
-                <div class="file-main">
-                    <span class="file-link" onclick="handlePlay('frame of mind.mp3')">frame of mind.mp3</span>
-                    <div class="file-tags">
-                        <span class="tag-item">techno</span>
-                        <span class="tag-item">128 bpm</span>
-                    </div>
-                </div>
-                <div class="file-meta-right">
-                    <span class="file-size">10.5 mb</span>
-                    <a href="audio/frame of mind.mp3" download class="dl-btn">↓</a>
-                </div>
-            </div>
-
-            <div class="file-row">
-                <div class="file-main">
-                    <span class="file-link" onclick="handlePlay('hii.mp3')">hii.mp3</span>
-                    <div class="file-tags">
-                        <span class="tag-item">garage</span>
-                        <span class="tag-item">130 bpm</span>
-                    </div>
-                </div>
-                <div class="file-meta-right">
-                    <span class="file-size">6.8 mb</span>
-                    <a href="audio/hii.mp3" download class="dl-btn">↓</a>
-                </div>
-            </div>
-
-            <div class="file-row">
-                <div class="file-main">
-                    <span class="file-link" onclick="handlePlay('acidity regulator.mp3')">acidity regulator.mp3</span>
-                    <div class="file-tags">
-                        <span class="tag-item">acid house</span>
-                        <span class="tag-item">125 bpm</span>
-                    </div>
-                </div>
-                <div class="file-meta-right">
-                    <span class="file-size">11.2 mb</span>
-                    <a href="audio/acidity regulator.mp3" download class="dl-btn">↓</a>
-                </div>
-            </div>
-        </section>
-    </main>
-
-    <footer id="player-bar" class="player-bar">
-        <div class="player-container">
-            <div class="player-controls">
-                <span onclick="togglePlayback()" id="play-icon">▶</span>
-                <span onclick="closePlayer()">✕</span>
-            </div>
-            <div class="progress-container" onclick="seek(event)">
-                <div class="progress-bg"></div>
-                <div id="progress-fill" class="progress-fill"></div>
-            </div>
-            <div class="track-display">
-                <span id="timestamp" style="opacity: 0.3; font-size: 0.7rem;">00:00 / 00:00</span>
-                <span id="track-name">NO TRACK</span>
-            </div>
+    <section id="bookings" class="content-section">
+        <div class="content-inner">
+            <h2>Bookings</h2>
+            <p>For bookings and collaborations:</p>
+            <p><a href="mailto:bookings@dualshockmusic.com">bookings@dualshockmusic.com</a></p>
+            <p class="close-hint">Click dualshock above to return</p>
         </div>
-    </footer>
-
-    <audio id="audio-engine" src=""></audio>
+    </section>
+    <section id="contact" class="content-section">
+        <div class="content-inner">
+            <h2>Contact</h2>
+            <p>Email: <a href="mailto:contact@dualshockmusic.com">contact@dualshockmusic.com</a></p>
+            <p class="close-hint">Click dualshock above to return</p>
+        </div>
+    </section>
 
     <script>
-        const canvas = document.getElementById('starfield');
-        const ctx = canvas.getContext('2d');
-        let width, height, stars = [];
-        const STAR_COUNT = 700;
-        
-        const LANDING_SPEED = 0.8; 
-        const CONTENT_SPEED = 0.6; 
-        let currentSpeed = LANDING_SPEED;
-        let targetSpeed = LANDING_SPEED;
+        var Module = { canvas: document.getElementById("canvas") };
 
-        function initStars() {
-            width = window.innerWidth;
-            height = window.innerHeight;
-            canvas.width = width;
-            canvas.height = height;
-            stars = [];
-            for (let i = 0; i < STAR_COUNT; i++) {
-                stars.push({
-                    x: (Math.random() - 0.5) * width * 2,
-                    y: (Math.random() - 0.5) * height * 2,
-                    z: Math.random() * width
+        var audioContext, sourceNode, isPlaying = false, currentBuffer;
+        var startTime = 0, pausedAt = 0, currentTrackUrl = null;
+
+        const TRACKS = [{ url: 'audio/talk dirty1.mp3', label: 'Talk Dirty' }];
+
+        (function initTrackSelect() {
+            const sel = document.getElementById('track-select');
+            TRACKS.forEach(t => {
+                const opt = document.createElement('option');
+                opt.value = t.url;
+                opt.textContent = t.label;
+                sel.appendChild(opt);
+            });
+        })();
+
+        function updateCanvasVisibility() {
+            document.getElementById('canvas').classList.toggle('playing', isPlaying && currentBuffer);
+        }
+        function updateDownloadBtn() {
+            const btn = document.getElementById('download-btn');
+            if (currentTrackUrl && currentBuffer) {
+                btn.href = currentTrackUrl;
+                btn.download = currentTrackUrl.split('/').pop() || 'track.mp3';
+                btn.classList.remove('hidden');
+            } else btn.classList.add('hidden');
+        }
+
+        function togglePlayer() {
+            const player = document.getElementById('player');
+            const bar = document.querySelector('.bottom-bar');
+            player.classList.toggle('player--active');
+            bar.classList.toggle('player-active', player.classList.contains('player--active'));
+        }
+
+        function pickTrack(url) {
+            if (!url) return;
+            loadAndPlay(url);
+        }
+
+        async function loadAndPlay(url) {
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                audioContext.leftAnalyser = audioContext.createAnalyser();
+                audioContext.rightAnalyser = audioContext.createAnalyser();
+                audioContext.leftAnalyser.fftSize = 512;
+                audioContext.rightAnalyser.fftSize = 512;
+            }
+            if (audioContext.state === 'suspended') await audioContext.resume();
+            if (sourceNode) sourceNode.stop();
+
+            document.getElementById('track-name').textContent = ' – loading…';
+            document.getElementById('player').classList.add('player--active');
+            document.querySelector('.bottom-bar').classList.add('player-active');
+
+            try {
+                const res = await fetch(url);
+                const buf = await res.arrayBuffer();
+                audioContext.decodeAudioData(buf, buffer => {
+                    currentBuffer = buffer;
+                    currentTrackUrl = url;
+                    startBufferSource(0);
+                    const label = (TRACKS.find(t => t.url === url) || {}).label || url.split('/').pop().replace('.mp3','');
+                    document.getElementById('track-select').value = url;
+                    document.getElementById('track-name').textContent = ' – ' + label;
+                    document.getElementById('play-btn').classList.remove('player__button--paused');
+                    document.getElementById('play-btn').classList.add('player__button--playing');
+                    isPlaying = true;
+                    updateCanvasVisibility();
+                    updateDownloadBtn();
                 });
+            } catch (e) {
+                console.error(e);
+                document.getElementById('track-name').textContent = ' – error';
+                document.getElementById('track-select').value = '';
             }
         }
 
-        function drawStars() {
-            ctx.fillStyle = 'black';
-            ctx.fillRect(0, 0, width, height);
-            currentSpeed += (targetSpeed - currentSpeed) * 0.02;
-            for (let i = 0; i < STAR_COUNT; i++) {
-                let s = stars[i];
-                s.z -= currentSpeed;
-                if (s.z <= 0) {
-                    s.z = width;
-                    s.x = (Math.random() - 0.5) * width * 2;
-                    s.y = (Math.random() - 0.5) * height * 2;
-                }
-                const k = 128 / s.z;
-                const px = s.x * k + width / 2;
-                const py = s.y * k + height / 2;
-                if (px >= 0 && px <= width && py >= 0 && py <= height) {
-                    const size = (1 - s.z / width) * 1.8;
-                    ctx.fillStyle = `rgba(255, 255, 255, ${1 - s.z / width})`;
-                    ctx.beginPath();
-                    ctx.arc(px, py, size, 0, Math.PI * 2);
-                    ctx.fill();
-                }
-            }
-            requestAnimationFrame(drawStars);
-        }
+        function startBufferSource(offset) {
+            if (sourceNode) sourceNode.stop();
+            sourceNode = audioContext.createBufferSource();
+            sourceNode.buffer = currentBuffer;
+            sourceNode.loop = true;
+            audioContext.source = sourceNode;
 
-        window.addEventListener('resize', initStars);
-        initStars();
-        drawStars();
+            const splitter = audioContext.createChannelSplitter(2);
+            sourceNode.connect(splitter);
+            sourceNode.connect(audioContext.destination);
+            splitter.connect(audioContext.leftAnalyser, 0, 0);
+            if (currentBuffer.numberOfChannels > 1)
+                splitter.connect(audioContext.rightAnalyser, 1, 0);
+            else
+                splitter.connect(audioContext.leftAnalyser, 0, 0);
 
-        function showSection(id) {
-            canvas.style.opacity = '0.3'; 
-            targetSpeed = CONTENT_SPEED; 
-            document.querySelectorAll('.content-section').forEach(s => s.style.display = 'none');
-            document.getElementById(id).style.display = 'block';
-            if(window.innerWidth <= 768) document.body.style.overflow = 'auto';
-        }
-
-        function resetToLanding() {
-            canvas.style.opacity = '1';
-            targetSpeed = LANDING_SPEED; 
-            document.querySelectorAll('.content-section').forEach(s => s.style.display = 'none');
-            if(window.innerWidth <= 768) document.body.style.overflow = 'hidden';
-            window.scrollTo(0, 0);
-        }
-
-        const audio = document.getElementById('audio-engine');
-        const playIcon = document.getElementById('play-icon');
-        const progressFill = document.getElementById('progress-fill');
-        const trackName = document.getElementById('track-name');
-        const timestamp = document.getElementById('timestamp');
-        const playerBar = document.getElementById('player-bar');
-
-        function handlePlay(file) {
-            playerBar.style.display = 'block';
-            trackName.innerText = file;
-            audio.src = `audio/${file}`;
-            audio.play();
-            playIcon.innerText = '⏸';
+            startTime = audioContext.currentTime - offset;
+            sourceNode.start(0, offset);
+            animateProgress();
         }
 
         function togglePlayback() {
-            if (audio.paused) { audio.play(); playIcon.innerText = '⏸'; } 
-            else { audio.pause(); playIcon.innerText = '▶'; }
-        }
-
-        function closePlayer() { audio.pause(); playerBar.style.display = 'none'; }
-
-        function formatTime(seconds) {
-            const min = Math.floor(seconds / 60);
-            const sec = Math.floor(seconds % 60);
-            return `${min.toString().padStart(2, '0')}:${sec.toString().padStart(2, '0')}`;
-        }
-
-        audio.ontimeupdate = () => {
-            if (audio.duration) {
-                const pct = (audio.currentTime / audio.duration) * 100;
-                progressFill.style.width = pct + '%';
-                timestamp.innerText = `${formatTime(audio.currentTime)} / ${formatTime(audio.duration)}`;
+            if (!currentBuffer) return;
+            if (isPlaying) {
+                sourceNode.stop();
+                if (audioContext) audioContext.source = null;
+                pausedAt = Math.min(audioContext.currentTime - startTime, currentBuffer.duration);
+                document.getElementById('play-btn').classList.add('player__button--paused');
+                document.getElementById('play-btn').classList.remove('player__button--playing');
+                isPlaying = false;
+            } else {
+                const offset = Math.min(pausedAt, currentBuffer.duration - 0.01);
+                startBufferSource(offset);
+                document.getElementById('play-btn').classList.remove('player__button--paused');
+                document.getElementById('play-btn').classList.add('player__button--playing');
+                isPlaying = true;
             }
-        };
+            updateCanvasVisibility();
+            updateDownloadBtn();
+        }
+
+        function animateProgress() {
+            if (!isPlaying || !currentBuffer) return;
+            const elapsed = audioContext.currentTime - startTime;
+            const pct = (elapsed % currentBuffer.duration) / currentBuffer.duration * 100;
+            document.getElementById('progress-fill').style.transform = 'scaleX(' + pct/100 + ')';
+            requestAnimationFrame(animateProgress);
+        }
 
         function seek(e) {
+            if (!currentBuffer) return;
             const rect = e.currentTarget.getBoundingClientRect();
-            const x = e.clientX - rect.left;
-            const width = rect.width;
-            const pct = x / width;
-            audio.currentTime = pct * audio.duration;
+            const pos = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+            pausedAt = pos * currentBuffer.duration;
+            if (isPlaying) startBufferSource(pausedAt);
+            else document.getElementById('progress-fill').style.transform = 'scaleX(' + pos + ')';
+        }
+
+        function toggleFullscreen() {
+            if (!document.fullscreenElement)
+                document.documentElement.requestFullscreen?.() || document.body.requestFullscreen?.();
+            else document.exitFullscreen?.();
+        }
+
+        function showSection(id) {
+            document.querySelectorAll('.content-section').forEach(s => s.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+            document.getElementById('player').classList.remove('player--active');
+            document.querySelector('.bottom-bar').classList.remove('player-active');
+        }
+
+        function resetToLanding() {
+            document.querySelectorAll('.content-section').forEach(s => s.classList.remove('active'));
+            document.getElementById('player').classList.remove('player--active');
+            document.querySelector('.bottom-bar').classList.remove('player-active');
         }
     </script>
+    <script src="js/goom.js"></script>
 </body>
 </html>
